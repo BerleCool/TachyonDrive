@@ -1,74 +1,72 @@
-# TACHYON / DRIVE
+# Tachyon Drive 0.2
 
-**Android-first Hyundai i20 companion** — Expo / React Native / TypeScript, dark charcoal + restrained orange.
+A standalone, phone-powered driving companion for a **2018 Hyundai i20**. React Native + Expo SDK 58 + **NativeWind**, with a charcoal/orange mobile interface.
 
-## Status
-First functional foundation on `forgewell-connector`. The home screen contains a rotatable original 3D **GB-generation-inspired** model with independently animated front/rear doors. It is a *preview*, not a licensed factory-accurate 2018 i20 3D asset. No remote unlocking, door actuation or ECU coding is implemented.
+## What it actually does
 
-Real BLE diagnostics are adapter-dependent. The app defaults to DISCONNECTED; sample values appear only when **Demo mode** is explicitly enabled. The car's stock Bluetooth audio connection is independent of a separate BLE OBD-II adapter.
+- Animated GPS speedometer, focus display, optional visual speed threshold and keep-awake.
+- Start, pause, resume and finish a trip; recover unfinished trips after restart.
+- GPS distance, elapsed/moving time, average/max speed and optional offline route traces.
+- Estimated fuel cost using your consumption and DKK/litre settings; daily and monthly totals.
+- Per-trip rate snapshots: changing today's price does not rewrite yesterday's costs.
+- Separate fill-up receipts and actual pump spending; full-to-full consumption calibration.
+- Saved parking location, CSV export without coordinates, personal car photo and local deletion controls.
+- On-device SQLite storage; no account, backend, analytics or runtime asset downloads.
 
-## Setup
+## No OBD adapter required
 
-Requires a supported Node version (22.13+, 24.3+, or 26+), Android Studio / Android SDK, a compatible JDK, and a physical Android phone. The local S25 Ultra debug build was compiled with Node 26.9 and Java 21.
+The app uses **phone GPS**, not diagnostic data from the stereo. Pair Bluetooth audio in Android as usual. Tachyon does not claim to read engine RPM, ECU faults, fuel level or door states from that connection, and does not take audio focus.
+
+Costs are estimates: `distance km / 100 * litres per 100 km * DKK per litre`. Rates start unset. Enter your own measured consumption (L/100km or km/L) and pump price in Garage. Idling, driving style, inaccurate GPS and missing segments can change actual consumption. Actual fill-up spending is displayed separately, never added to trip estimates.
+
+## Standalone install: no laptop after installation
+
+The **Standalone Android and verification** workflow builds an ARM64 **release-variant APK**, with JavaScript, fonts and artwork embedded. Download the `TachyonDrive-standalone-arm64` artifact from a successful run. Install the APK on the S25 Ultra, then close Metro, unplug USB and cold-launch **Tachyon Drive**.
+
+The standalone application ID is `net.gideonai.tachyondrive.standalone`; the development ID remains `net.gideonai.tachyondrive`. This deliberately installs alongside the previous development app without erasing its data or assuming signing keys match. The apps do not share history. Do not uninstall an existing app to work around a signature mismatch without exporting its data first.
+
+CI's locally built personal APK uses the Expo-generated Android debug signing configuration in a **release build**. It has an embedded bundle and is not a Metro-dependent development client, but is not a production-signed Play Store release. Maintain a private stable signing key before distributing outside personal testing; never commit that key. EAS internal distribution can manage signing separately.
+
+ADB installation (optional; used only for installation):
 
 ```sh
-npm ci
-npx expo install --check
+sh scripts/install-standalone.sh /path/to/TachyonDrive-standalone-arm64.apk
+```
+
+Or build locally with Node 22 and the Android SDK/JDK supported by Expo:
+
+```sh
+npm install
+npm run assets                  # only needed if bundled artwork is missing; Python/Pillow
 npm run typecheck
 npm test
-npx expo run:android
+TACHYON_STANDALONE=1 npx expo prebuild --platform android
+TACHYON_STANDALONE=1 npx expo run:android --variant release
 ```
 
-**Use an Expo Development Build**, not Expo Go: `react-native-ble-plx` needs native modules. Pair with a supported **Bluetooth Low Energy** OBD adapter (not a Bluetooth Classic-only ELM327). BLE GATT services/characteristics vary by adapter, so automatic discovery may still need device-specific adaptation.
+Do not use `expo start` as the normal way to launch an installed standalone app. Metro is only a development tool.
 
-### USB development on Android
+## GPS and screen-off behaviour
 
-Enable USB debugging on the phone, connect it, and accept the computer's authorization prompt. `adb devices -l` must list it as `device`, not `unauthorized`.
+Location is requested only when you enable GPS/start a drive/save parking. Use precise location. Foreground-only recording pauses when leaving the app. Enable **Garage > Screen-off recording** and grant **Allow all the time** to record while using Spotify or locking the screen. An Android foreground-service notification identifies ongoing tracking. Force-stop and device battery restrictions can stop tracking; recovery pauses an interrupted session rather than inventing missing distance.
 
-```sh
-# First install or rebuild after native dependency/config changes:
-npm run android -- --device
+Trips are started explicitly; pairing the stereo does **not** secretly start location tracking. Recording stops on Pause/Finish. Preview dial values never enter history. GPS speed is supplementary, not a replacement for the vehicle speedometer. Set up the app while parked.
 
-# Subsequent sessions, with the phone connected by USB:
-adb reverse tcp:8081 tcp:8081
-npm start -- --localhost
-```
+## Vehicle visual
 
-Open **Tachyon Drive** and select the local development server. If necessary, launch it directly with:
-
-```sh
-adb shell am start -a android.intent.action.VIEW -d 'exp+tachyon-drive://?__expo_url=http%3A%2F%2F127.0.0.1%3A8081' net.gideonai.tachyondrive
-```
-
-This debug build needs the computer's development server running. It is not a standalone/offline APK. Use the Home door buttons and rotation arrows for the visual preview; **Settings → Demo telemetry** enables labeled sample readings without connecting to a vehicle. Leave pairing unused when testing only the app.
-
-Dependencies are locked in `package-lock.json`; use `npm ci` for repeatable installs. Run `npm run doctor` to check Expo compatibility before rebuilding.
-
-## App
-- Home: responsive handset-first layout, 3D viewer, rotatable view, visual four-door open/close animations, metrics in connected/demo states
-- Data: real vehicle RPM/speed/coolant/voltage/load/intake readings when BLE service supports PIDs
-- Modules: read-only, clearly marks advanced Hyundai BCM/ABS as NOT VERIFIED
-- Settings: demo toggle, connection/disconnection, license info
-
-## Safety boundaries
-- No OBD Mode 04 (clear DTC), ECU writes, security access, immobilizer operations, or remote locks.
-- **Opening a 3D door does not unlock or open a physical door.** Physical door-ajar state can be synchronized only after verified manufacturer-specific read-only BCM data is available.
-- No fabricated odometer, fuel level, VIN, diagnostic scan, or vehicle-health status.
-- Never use the app while driving. Have a passenger monitor live data.
-
-## 2018 body-year caution
-2018 was the mid-cycle facelift year, so a particular 2018 VIN may be pre-facelift or facelift. Confirm your exact appearance before we substitute a licensed accurate model.
-
-See `assets/models/README.md` for free model research and attribution.
+The inaccurate procedural 3D car has been removed. The home uses an actual **2018 i20 reference photograph**, credited to Vauxford under CC BY-SA 4.0, or a photo you choose. **It is not a rotatable 3D model.** See `assets/ATTRIBUTION.md`. No exact free, licensed, door-rigged 2018 mesh has been integrated. Physical door-state synchronisation is not available without an appropriate vehicle-data source.
 
 ## Architecture
-- `src/components/CarModel.tsx`: independent 3D geometry and animated hinge rigs.
-- `src/components/CarStage.tsx`: orbit/door controls.
-- `src/vehicle/obd.ts`: unit-tested read-only PID decoding.
-- `src/vehicle/BleObdService.ts`: BLE GATT adapter discovery, sequential ELM327 commands, polling.
-- `src/App.tsx`: mobile-first pages and connection state.
 
-## Known limitations
-- Model is a hand-built approximation until a verified, compatible, free 2018 i20 model is available.
-- Bluetooth Classic OBD adapters are not supported by `react-native-ble-plx`.
-- UI and tests require device-level QA; CI cannot verify GPU rendering or an actual vehicle connection.
+- `src/core/trips.ts`: pure GPS filtering, cost estimates, local-day allocation, calibration and CSV escaping.
+- `src/services/database.ts`: SQLite WAL with transactional writes; `.web.ts` uses browser storage for UI testing only.
+- `src/services/store.ts`: serialised state changes; publish only after persistence succeeds.
+- `src/services/location.ts`: foreground watcher, Android foreground-service/background task, recovery and permissions.
+- `src/ui/instruments.tsx`: custom SVG speedometer and route/cost visualisations.
+- `src/screens/`: Home, Drive, Trips and Garage, styled with NativeWind.
+
+## Verification
+
+CI checks TypeScript, deterministic accounting tests, retained OBD parser unit tests, Android JS export, browser interaction tests with actual screenshots, and the native release APK. It checks the APK contains `assets/index.android.bundle`. These are not equivalent to a real-car road test or S25 device validation. See `docs/DEVICE_QA.md` for the remaining physical-device checks.
+
+The repository intentionally keeps the old pure OBD parser tests as regression coverage, but the new app neither imports a BLE transport nor requests Bluetooth scanning permissions.

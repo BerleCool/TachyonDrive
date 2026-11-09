@@ -1,9 +1,13 @@
 node_modules/
 .expo/
 dist/
+dist-web/
+.core-test/
 build/
 android/
 ios/
+artifacts/
+test-results/
 *.jks
 *.keystore
 *.p12
@@ -12,5 +16,3 @@ ios/
 !.env.example
 .DS_Store
 *.log
-assets/models/*.glb
-!assets/models/README.md

@@ -1,19 +1,89 @@
-name: Typecheck and tests
+name: Standalone Android and verification
 on:
   push:
     branches: [forgewell-connector]
   pull_request:
+  workflow_dispatch:
+concurrency:
+  group: tachyon-${{ github.ref }}
+  cancel-in-progress: true
 jobs:
-  validate:
+  verify-and-build:
     runs-on: ubuntu-latest
+    timeout-minutes: 45
+    permissions:
+      contents: write
+    env:
+      CI: '1'
+      EXPO_NO_TELEMETRY: '1'
+      TACHYON_STANDALONE: '1'
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
           node-version: 22
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 21
       - name: Install dependencies
-        run: npm ci --no-audit --no-fund
-      - name: TypeScript
-        run: npm run typecheck
-      - name: OBD parser tests
-        run: npm test
+        run: npm install --no-audit --no-fund
+      - name: Prepare bundled offline artwork
+        run: |
+          python3 -m pip install --quiet Pillow
+          npm run assets
+      - name: TypeScript and accounting tests
+        run: |
+          npm run typecheck
+          npm test
+      - name: Bundle Android JavaScript and offline assets
+        run: npm run export:android
+      - name: Export UI for browser verification
+        run: npx expo export --platform web --output-dir dist-web
+      - name: Browser tests and actual UI screenshots
+        run: |
+          npx playwright install --with-deps chromium
+          npx playwright test
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: tachyon-ui-verification
+          path: |
+            artifacts/
+            test-results/
+          if-no-files-found: ignore
+          retention-days: 14
+      - name: Generate Android project
+        run: npx expo prebuild --platform android --no-install
+      - name: Build standalone ARM64 release APK
+        working-directory: android
+        run: ./gradlew :app:assembleRelease -PreactNativeArchitectures=arm64-v8a --no-daemon
+      - name: Verify embedded JavaScript and package APK
+        run: |
+          mkdir -p artifacts
+          APK=android/app/build/outputs/apk/release/app-release.apk
+          unzip -l "$APK" | grep 'assets/index.android.bundle'
+          cp "$APK" artifacts/TachyonDrive-standalone-arm64.apk
+          sha256sum artifacts/TachyonDrive-standalone-arm64.apk > artifacts/TachyonDrive-standalone-arm64.apk.sha256
+      - uses: actions/upload-artifact@v4
+        with:
+          name: TachyonDrive-standalone-arm64
+          path: |
+            artifacts/TachyonDrive-standalone-arm64.apk
+            artifacts/TachyonDrive-standalone-arm64.apk.sha256
+          retention-days: 30
+      - name: Keep lockfile and licensed artwork in the requested branch
+        if: github.event_name == 'push' && github.ref == 'refs/heads/forgewell-connector'
+        run: |
+          HEAD_NOW=$(git ls-remote origin refs/heads/forgewell-connector | cut -f1)
+          if [ "$HEAD_NOW" != "$GITHUB_SHA" ]; then
+            echo 'Branch changed during verification; not overwriting it.'
+            exit 0
+          fi
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add package-lock.json assets/i20-2018.png assets/icon.png
+          if ! git diff --cached --quiet; then
+            git commit -m 'chore: lock verified dependencies and bundle licensed offline artwork [skip ci]'
+            git push origin HEAD:forgewell-connector
+          fi

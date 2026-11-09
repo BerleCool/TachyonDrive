@@ -1,0 +1,7 @@
+{
+  "cli": { "version": ">= 16.0.0" },
+  "build": {
+    "standalone": { "distribution": "internal", "developmentClient": false, "env": { "TACHYON_STANDALONE": "1" }, "android": { "buildType": "apk" } },
+    "production": { "developmentClient": false, "env": { "TACHYON_STANDALONE": "1" }, "android": { "buildType": "app-bundle" } }
+  }
+}
