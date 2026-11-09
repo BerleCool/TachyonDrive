@@ -221,7 +221,7 @@ export default function App() {
   </ScrollView>;
 
   return <SafeAreaView style={s.safe}>
-    <StatusBar barStyle="light-content" backgroundColor={C.bg}/>
+    <StatusBar barStyle="light-content"/>
     {header}
     <Separator/>
     <View style={s.content}>
@@ -270,7 +270,7 @@ const s = StyleSheet.create({
   content: { flex: 1 },
   page: { paddingHorizontal: 18, paddingTop: 20, paddingBottom: 28 },
   vehicleHead: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: 19 },
-  vehicleTitle: { fontSize: 24, fontWeight: "750", color: C.foreground, letterSpacing: -0.7 },
+  vehicleTitle: { fontSize: 24, fontWeight: "700", color: C.foreground, letterSpacing: -0.7 },
   vehicleSubtitle: { marginTop: 5, color: C.secondary, fontSize: 12 },
   chip: { flexDirection: "row", alignItems: "center", gap: 6, paddingVertical: 7, paddingHorizontal: 10, borderRadius: 30, borderWidth: 1, borderColor: C.border },
   chipActive: { borderColor: C.orangeMuted, backgroundColor: "#2B211B" },
@@ -285,7 +285,7 @@ const s = StyleSheet.create({
   menuRow: { flexDirection: "row", gap: 13, alignItems: "center", paddingVertical: 16, borderBottomWidth: 1, borderBottomColor: C.border },
   menuIcon: { width: 33, alignItems: "center" },
   menuText: { flex: 1 },
-  menuTitle: { color: C.foreground, fontSize: 14, fontWeight: "650" },
+  menuTitle: { color: C.foreground, fontSize: 14, fontWeight: "600" },
   menuSubtitle: { color: C.secondary, fontSize: 11, marginTop: 4, lineHeight: 16 },
   connectionHint: { flexDirection: "row", gap: 12, marginTop: 24, padding: 13, borderColor: C.orangeMuted, borderWidth: 1, backgroundColor: "#241E1A", borderRadius: 9, alignItems: "center" },
   hintTitle: { fontSize: 13, fontWeight: "700", color: C.foreground },
@@ -293,14 +293,14 @@ const s = StyleSheet.create({
   inlineButton: { paddingHorizontal: 10, paddingVertical: 8, borderRadius: 6, backgroundColor: C.orange },
   inlineButtonText: { color: C.black, fontWeight: "800", fontSize: 11 },
   demoNotice: { color: C.orange, fontSize: 10, letterSpacing: 1, textAlign: "center", marginTop: 17 },
-  heading: { color: C.foreground, fontSize: 25, fontWeight: "750", letterSpacing: -0.5 },
+  heading: { color: C.foreground, fontSize: 25, fontWeight: "700", letterSpacing: -0.5 },
   caption: { color: C.secondary, fontSize: 12, marginTop: 6 },
   dataStatus: { flexDirection: "row", flexWrap: "wrap", alignItems: "center", gap: 10, marginBottom: 24 },
   dataState: { flexShrink: 1, color: C.secondary, fontSize: 11 },
   dataGrid: { flexDirection: "row", flexWrap: "wrap", gap: 10 },
   dataTile: { width: "48.3%", backgroundColor: C.surface, borderRadius: 9, borderWidth: 1, borderColor: C.border, padding: 16, minHeight: 129, justifyContent: "space-between" },
   dataTileLabel: { color: C.secondary, fontSize: 11, marginTop: 11 },
-  dataTileValue: { color: C.foreground, fontWeight: "750", fontSize: 21, marginTop: 7 },
+  dataTileValue: { color: C.foreground, fontWeight: "700", fontSize: 21, marginTop: 7 },
   smallNote: { color: C.muted, fontSize: 11, lineHeight: 18, marginTop: 24 },
   primaryButton: { marginTop: 22, backgroundColor: C.orange, borderRadius: 9, alignItems: "center", justifyContent: "center", flexDirection: "row", gap: 9, padding: 16 },
   primaryText: { color: C.black, fontWeight: "800", fontSize: 12, letterSpacing: 1 },
@@ -317,7 +317,7 @@ const s = StyleSheet.create({
   navLabel: { fontSize: 10, color: C.secondary, fontWeight: "600" },
   scanSheet: { position: "absolute", zIndex: 10, left: 0, right: 0, bottom: 62, maxHeight: "70%", backgroundColor: C.surface, borderTopLeftRadius: 18, borderTopRightRadius: 18, padding: 20, borderWidth: 1, borderColor: C.border },
   scanHead: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: 20 },
-  scanTitle: { fontSize: 18, fontWeight: "750", color: C.foreground },
+  scanTitle: { fontSize: 18, fontWeight: "700", color: C.foreground },
   scanSubtitle: { color: C.secondary, fontSize: 11, marginTop: 5 },
   scanClose: { padding: 9 },
   scanProgress: { flexDirection: "row", gap: 10, alignItems: "center", marginBottom: 10 },
