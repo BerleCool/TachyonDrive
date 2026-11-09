@@ -14,12 +14,13 @@ export type ElevationAnchor = {
 export type ElevationStats = {
   ascentM: number; descentM: number;
   lastAltitudeM: number | null; lastAccuracyM: number | null;
+  smoothedM?: number | null;
   coveredMetres: number; samples: number; rejected: number;
   anchor: ElevationAnchor | null;
 };
 export type ElevationUpdate = { stats: ElevationStats; ascentDelta: number; descentDelta: number };
 export const EMPTY_ELEVATION = (): ElevationStats => ({
-  ascentM: 0, descentM: 0, lastAltitudeM: null, lastAccuracyM: null,
+  ascentM: 0, descentM: 0, lastAltitudeM: null, lastAccuracyM: null, smoothedM: null,
   coveredMetres: 0, samples: 0, rejected: 0, anchor: null,
 });
 const finite = (n: unknown): n is number => typeof n === 'number' && Number.isFinite(n);
@@ -39,11 +40,17 @@ export function observeElevation(previous: ElevationStats | undefined, fix: Heig
     ? fix.altitude : null;
   const accuracy = finite(fix.altitudeAccuracy) && fix.altitudeAccuracy >= 0
     ? fix.altitudeAccuracy : null;
-  const base: ElevationStats = { ...p, lastAltitudeM: display, lastAccuracyM: accuracy };
-  if (!usableAltitude(fix) || !finite(totalMetres) || !finite(movingMetres)) {
+  const trusted = usableAltitude(fix);
+  // A low-pass altitude avoids turning oscillating GPS noise into many small hills.
+  const smoothed = trusted ? (finite(p.smoothedM)
+    ? p.smoothedM * 0.5 + fix.altitude! * 0.5 : fix.altitude!) : null;
+  const base: ElevationStats = {
+    ...p, lastAltitudeM: smoothed ?? display, lastAccuracyM: accuracy, smoothedM: smoothed,
+  };
+  if (!trusted || !finite(totalMetres) || !finite(movingMetres)) {
     return { stats: { ...base, anchor: null, rejected: p.rejected + 1 }, ascentDelta: 0, descentDelta: 0 };
   }
-  const anchor = { altitudeM: fix.altitude!, accuracyM: fix.altitudeAccuracy!,
+  const anchor = { altitudeM: smoothed!, accuracyM: fix.altitudeAccuracy!,
     atMetres: totalMetres, timestamp: fix.timestamp };
   if (reset || !p.anchor) {
     return { stats: { ...base, anchor, samples: p.samples + 1 }, ascentDelta: 0, descentDelta: 0 };
@@ -57,9 +64,9 @@ export function observeElevation(previous: ElevationStats | undefined, fix: Heig
   if (movingMetres <= 2 || travelled < 40 || age < 5000) {
     return { stats: { ...base, samples: p.samples + 1 }, ascentDelta: 0, descentDelta: 0 };
   }
-  const difference = fix.altitude! - p.anchor.altitudeM;
-  const threshold = Math.max(3.5, 1.25 * Math.hypot(fix.altitudeAccuracy!, p.anchor.accuracyM));
-  if (Math.abs(difference) > Math.max(15, travelled * 0.15)) {
+  const difference = smoothed! - p.anchor.altitudeM;
+  const threshold = Math.max(4.5, 1.5 * Math.hypot(fix.altitudeAccuracy!, p.anchor.accuracyM));
+  if (Math.abs(difference) > Math.max(6, travelled * 0.15)) {
     return { stats: { ...base, rejected: p.rejected + 1 }, ascentDelta: 0, descentDelta: 0 };
   }
   // Mark coverage only for trusted moving measurements. Never mark GPS gaps.

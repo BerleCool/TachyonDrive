@@ -32,3 +32,26 @@ test('fuel calibration requires two full tanks and increasing odometer', () => a
 test('CSV escapes quotes, formulas, and omits coordinates', () => { const t = trip(); t.title = '=cmd,"secret"'; const output = E.csv([t]); assert.ok(output.includes("'=cmd,")); assert.ok(output.includes('""secret""')); assert.ok(!output.includes('latitude')); });
 test('route privacy disables stored polyline', () => { const t = E.ingest(E.newTrip('a', start, { ...prefs, recordRoute: false }), fix()); assert.deepEqual(t.route, []); });
 test('route storage stays bounded', () => { let t = trip(); for (let i = 0; i < 2200; i++) t = E.ingest(t, fix(i * 3000, 56.15 + i * .0002)); assert.ok(t.route.length <= 2048); assert.ok(t.metres > 40000); });
+
+test('terrain correction flows through trip ingestion, snapshot, and monthly totals', () => {
+  const p = { ...prefs, terrainMode: true, massKg: 1150, fuelType: 'petrol' };
+  let t = E.newTrip('hill', start, p);
+  for(let i=0;i<=8;i++) t=E.ingest(t,{
+    latitude: 56.15 + i*.0005, longitude:10.20, timestamp:start+i*10000,
+    accuracy:3,speed:5,altitude:50+2*i,altitudeAccuracy:2
+  });
+  assert.ok((t.elevation?.ascentM??0)>0, 'sustained hill is recorded');
+  assert.ok(E.tripEstimate(t).cost>E.estimate(t.metres,t.rates).cost, 'uphill costs more');
+  assert.ok(E.totals([t],'2026-11').cost>E.estimate(t.metres,t.rates).cost, 'monthly summary uses hills');
+  const adjusted = E.tripEstimate(t).cost;
+  p.terrainMode=false;p.massKg=2000;
+  assert.equal(E.tripEstimate(t).cost, adjusted, 'snapshot cannot be retroactively changed');
+});
+test('pause resume cannot connect unrelated altitude anchors', () => {
+  let t=E.newTrip('p',start,{...prefs,terrainMode:true});
+  t=E.ingest(t,{latitude:56.15,longitude:10.2,timestamp:start,accuracy:3,speed:5,altitude:30,altitudeAccuracy:2});
+  t=E.pauseTrip(t,start+1000);
+  t=E.resumeTrip(t,start+10000);
+  t=E.ingest(t,{latitude:56.16,longitude:10.2,timestamp:start+11000,accuracy:3,speed:5,altitude:120,altitudeAccuracy:2});
+  assert.equal(t.elevation?.ascentM,0);
+});

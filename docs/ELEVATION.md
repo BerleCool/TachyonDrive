@@ -8,8 +8,8 @@ Altitude can be missing or inaccurate in tunnels, dense streets and poor GPS con
 
 The elevation accumulator requires valid altitude (-500 to 9000 m),
 vertical accuracy <= 12 m, moving distance, >= 40 m between accepted anchors,
->= 5 seconds, and a height difference > max(3.5 m, 1.25 × combined
-vertical uncertainty). Slopes that exceed plausible road gradients are discarded.
+>= 5 seconds, and a height difference > max(4.5 m, 1.5 × combined
+vertical uncertainty). A 50% exponential smoother reduces noisy vertical oscillation. Slopes that exceed plausible road gradients (about 15%) are discarded.
 Location gaps and pause/resume reset the anchor, preventing invented climbs.
 The accumulator tracks raw ascent, descent, coverage, and rejected readings.
 

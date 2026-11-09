@@ -31,7 +31,8 @@ test('slope beyond realistic road threshold is rejected', () => {
 test('downhill accumulates only measured descent', () => {
   let v=E.observeElevation(undefined,F(1000,100),0,0).stats;
   v=E.observeElevation(v,F(20000,92),100,100).stats;
-  assert.equal(v.descentM,8);
+  v=E.observeElevation(v,F(30000,84),200,100).stats;
+  assert.ok(v.descentM>=9 && v.descentM<=11);
 });
 test('a GPS gap resets the reference anchor', () => {
   let v=E.observeElevation(undefined,F(1000,50),0,0).stats;
@@ -71,4 +72,10 @@ test('negative and invalid rate inputs are rejected', () => {
 test('missing vertical accuracy cannot make an elevation correction', () => {
   assert.equal(E.usableAltitude(F(1000,60,null)),false);
   assert.equal(E.usableAltitude(F(1000,60,3)),true);
+});
+
+test('moving on a flat road with alternating 5m vertical noise does not invent hills', () => {
+  let v = E.observeElevation(undefined, F(1000,50), 0, 0).stats;
+  for (let i=1;i<=30;i++) v = E.observeElevation(v, F(1000+i*10000,50+(i%2?5:-5)),i*50,50).stats;
+  assert.equal(v.ascentM,0); assert.equal(v.descentM,0);
 });
