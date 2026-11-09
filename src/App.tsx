@@ -1,8 +1,9 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
-  ActivityIndicator, Alert, FlatList, Pressable, SafeAreaView, ScrollView,
+  ActivityIndicator, Alert, FlatList, Pressable, ScrollView,
   StatusBar, StyleSheet, Switch, Text, View,
 } from "react-native";
+import { SafeAreaProvider, SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import { CarStage } from "./components/CarStage";
@@ -220,7 +221,7 @@ export default function App() {
     <Text style={s.version}>TACHYON DRIVE  ·  PREVIEW 0.1.0</Text>
   </ScrollView>;
 
-  return <SafeAreaView style={s.safe}>
+  return <SafeAreaProvider><SafeAreaView style={s.safe}>
     <StatusBar barStyle="light-content"/>
     {header}
     <Separator/>
@@ -253,7 +254,7 @@ export default function App() {
         <Text style={[s.navLabel, tab === item.id && { color: C.orange }]}>{item.label}</Text>
       </Pressable>)}
     </View>
-  </SafeAreaView>;
+  </SafeAreaView></SafeAreaProvider>;
 }
 
 const s = StyleSheet.create({

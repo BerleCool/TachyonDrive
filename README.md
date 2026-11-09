@@ -37,7 +37,7 @@ npm start -- --localhost
 Open **Tachyon Drive** and select the local development server. If necessary, launch it directly with:
 
 ```sh
-adb shell am start -a android.intent.action.VIEW -d 'exp+tachyon-drive://expo-development-client/?url=http%3A%2F%2F127.0.0.1%3A8081' net.gideonai.tachyondrive
+adb shell am start -a android.intent.action.VIEW -d 'exp+tachyon-drive://?__expo_url=http%3A%2F%2F127.0.0.1%3A8081' net.gideonai.tachyondrive
 ```
 
 This debug build needs the computer's development server running. It is not a standalone/offline APK. Use the Home door buttons and rotation arrows for the visual preview; **Settings → Demo telemetry** enables labeled sample readings without connecting to a vehicle. Leave pairing unused when testing only the app.
