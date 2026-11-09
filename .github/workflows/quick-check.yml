@@ -1,0 +1,26 @@
+name: Fast TypeScript and accounting checks
+on:
+  push:
+    branches: [forgewell-connector]
+  pull_request:
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: tachyon-fast-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Resolve SDK dependencies
+        run: npm install --no-audit --no-fund
+      - name: TypeScript and offline trip regression tests
+        run: |
+          npm run typecheck
+          npm test
