@@ -6,7 +6,6 @@
     "version": "0.1.0",
     "orientation": "portrait",
     "userInterfaceStyle": "dark",
-    "newArchEnabled": true,
     "android": {
       "package": "net.gideonai.tachyondrive",
       "permissions": [
@@ -29,7 +28,8 @@
           "isBackgroundEnabled": false,
           "bluetoothAlwaysPermission": "Connect to your vehicle's Bluetooth diagnostic adapter."
         }
-      ]
+      ],
+      "expo-font"
     ],
     "extra": {
       "vehicleGeneration": "Hyundai i20 GB (2014–2020)",

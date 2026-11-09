@@ -9,17 +9,40 @@ Real BLE diagnostics are adapter-dependent. The app defaults to DISCONNECTED; sa
 
 ## Setup
 
-Requires Node >=22.13, Android Studio / Android SDK, Java 17 and a physical Android phone.
+Requires a supported Node version (22.13+, 24.3+, or 26+), Android Studio / Android SDK, a compatible JDK, and a physical Android phone. The local S25 Ultra debug build was compiled with Node 26.9 and Java 21.
 
 ```sh
-npm install
-npx expo install --fix
+npm ci
+npx expo install --check
 npm run typecheck
 npm test
 npx expo run:android
 ```
 
 **Use an Expo Development Build**, not Expo Go: `react-native-ble-plx` needs native modules. Pair with a supported **Bluetooth Low Energy** OBD adapter (not a Bluetooth Classic-only ELM327). BLE GATT services/characteristics vary by adapter, so automatic discovery may still need device-specific adaptation.
+
+### USB development on Android
+
+Enable USB debugging on the phone, connect it, and accept the computer's authorization prompt. `adb devices -l` must list it as `device`, not `unauthorized`.
+
+```sh
+# First install or rebuild after native dependency/config changes:
+npm run android -- --device
+
+# Subsequent sessions, with the phone connected by USB:
+adb reverse tcp:8081 tcp:8081
+npm start -- --localhost
+```
+
+Open **Tachyon Drive** and select the local development server. If necessary, launch it directly with:
+
+```sh
+adb shell am start -a android.intent.action.VIEW -d 'exp+tachyon-drive://expo-development-client/?url=http%3A%2F%2F127.0.0.1%3A8081' net.gideonai.tachyondrive
+```
+
+This debug build needs the computer's development server running. It is not a standalone/offline APK. Use the Home door buttons and rotation arrows for the visual preview; **Settings → Demo telemetry** enables labeled sample readings without connecting to a vehicle. Leave pairing unused when testing only the app.
+
+Dependencies are locked in `package-lock.json`; use `npm ci` for repeatable installs. Run `npm run doctor` to check Expo compatibility before rebuilding.
 
 ## App
 - Home: responsive handset-first layout, 3D viewer, rotatable view, visual four-door open/close animations, metrics in connected/demo states
