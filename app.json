@@ -1,18 +1,58 @@
 {
   "expo": {
-    "name": "Tachyon Drive", "slug": "tachyon-drive", "scheme": "tachyondrive", "version": "0.2.0",
-    "orientation": "portrait", "userInterfaceStyle": "dark", "icon": "./assets/icon.png",
+    "name": "Tachyon Drive",
+    "slug": "tachyon-drive",
+    "scheme": "tachyondrive",
+    "version": "0.3.0",
+    "orientation": "portrait",
+    "userInterfaceStyle": "dark",
+    "icon": "./assets/icon.png",
     "android": {
-      "package": "net.gideonai.tachyondrive", "versionCode": 2, "softwareKeyboardLayoutMode": "resize", "allowBackup": false,
-      "permissions": ["android.permission.ACCESS_FINE_LOCATION", "android.permission.ACCESS_COARSE_LOCATION", "android.permission.ACCESS_BACKGROUND_LOCATION", "android.permission.FOREGROUND_SERVICE", "android.permission.FOREGROUND_SERVICE_LOCATION", "android.permission.POST_NOTIFICATIONS"],
-      "blockedPermissions": ["android.permission.RECORD_AUDIO", "android.permission.CAMERA"]
+      "package": "net.gideonai.tachyondrive",
+      "versionCode": 3,
+      "softwareKeyboardLayoutMode": "resize",
+      "allowBackup": false,
+      "permissions": [
+        "android.permission.ACCESS_FINE_LOCATION",
+        "android.permission.ACCESS_COARSE_LOCATION",
+        "android.permission.ACCESS_BACKGROUND_LOCATION",
+        "android.permission.FOREGROUND_SERVICE",
+        "android.permission.FOREGROUND_SERVICE_LOCATION",
+        "android.permission.POST_NOTIFICATIONS"
+      ],
+      "blockedPermissions": [
+        "android.permission.RECORD_AUDIO",
+        "android.permission.CAMERA"
+      ]
     },
-    "ios": { "bundleIdentifier": "net.gideonai.tachyondrive" },
-    "web": { "bundler": "metro", "output": "single" },
+    "ios": {
+      "bundleIdentifier": "net.gideonai.tachyondrive"
+    },
+    "web": {
+      "bundler": "metro",
+      "output": "single"
+    },
     "plugins": [
-      "expo-font", "expo-sqlite",
-      ["expo-location", { "isAndroidBackgroundLocationEnabled": true, "isAndroidForegroundServiceEnabled": true, "isIosBackgroundLocationEnabled": true, "locationWhenInUsePermission": "Use GPS for your speed, trip distance and parking location.", "locationAlwaysAndWhenInUsePermission": "Continue a trip you start when the screen is locked. Tracking stops when you finish or pause." }],
-      ["expo-image-picker", { "photosPermission": "Choose a photo of your i20 for the home screen.", "cameraPermission": false, "microphonePermission": false }]
+      "expo-font",
+      "expo-sqlite",
+      [
+        "expo-location",
+        {
+          "isAndroidBackgroundLocationEnabled": true,
+          "isAndroidForegroundServiceEnabled": true,
+          "isIosBackgroundLocationEnabled": true,
+          "locationWhenInUsePermission": "Use GPS for your speed, trip distance and parking location.",
+          "locationAlwaysAndWhenInUsePermission": "Continue a trip you start when the screen is locked. Tracking stops when you finish or pause."
+        }
+      ],
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "Choose a photo of your i20 for the home screen.",
+          "cameraPermission": false,
+          "microphonePermission": false
+        }
+      ]
     ]
   }
 }

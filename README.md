@@ -1,4 +1,4 @@
-# Tachyon Drive 0.2
+# Tachyon Drive 0.3
 
 A standalone, phone-powered driving companion for a **2018 Hyundai i20**. React Native + Expo SDK 58 + **NativeWind**, with a charcoal/orange mobile interface.
 
@@ -8,6 +8,7 @@ A standalone, phone-powered driving companion for a **2018 Hyundai i20**. React 
 - Start, pause, resume and finish a trip; recover unfinished trips after restart.
 - GPS distance, elapsed/moving time, average/max speed and optional offline route traces.
 - Estimated fuel cost using your consumption and DKK/litre settings; daily and monthly totals.
+- GPS elevation, filtered ascent/descent, experimental slope-aware fuel adjustment with editable vehicle mass/fuel type; offline, no Google API billing.
 - Per-trip rate snapshots: changing today's price does not rewrite yesterday's costs.
 - Separate fill-up receipts and actual pump spending; full-to-full consumption calibration.
 - Saved parking location, CSV export without coordinates, personal car photo and local deletion controls.
@@ -54,7 +55,7 @@ Trips are started explicitly; pairing the stereo does **not** secretly start loc
 
 ## Vehicle visual
 
-The inaccurate procedural 3D car has been removed. The home uses an actual **2018 i20 reference photograph**, credited to Vauxford under CC BY-SA 4.0, or a photo you choose. **It is not a rotatable 3D model.** See `assets/ATTRIBUTION.md`. No exact free, licensed, door-rigged 2018 mesh has been integrated. Physical door-state synchronisation is not available without an appropriate vehicle-data source.
+The inaccurate procedural 3D car has been removed. The offline home uses an actual **2018 i20 reference photograph**, credited to Vauxford under CC BY-SA 4.0, or a photo you choose. **The photo is not a 3D model.** On Android, tap **3D VIEW** to open the internet-hosted Sketchfab interactive viewer of the 2019 i20 Active (or switch to the alternative i20). Rotate and pinch zoom there; no model meshes are redistributed and doors are not rigged. See `assets/ATTRIBUTION.md`. No exact free, licensed, door-rigged 2018 mesh has been integrated. Physical door-state synchronisation is not available without an appropriate vehicle-data source.
 
 ## Architecture
 
@@ -70,3 +71,7 @@ The inaccurate procedural 3D car has been removed. The home uses an actual **201
 CI checks TypeScript, deterministic accounting tests, retained OBD parser unit tests, Android JS export, browser interaction tests with actual screenshots, and the native release APK. It checks the APK contains `assets/index.android.bundle`. These are not equivalent to a real-car road test or S25 device validation. See `docs/DEVICE_QA.md` for the remaining physical-device checks.
 
 The repository intentionally keeps the old pure OBD parser tests as regression coverage, but the new app neither imports a BLE transport nor requests Bluetooth scanning permissions.
+
+## Altitude and physical fuel assumptions
+
+The app records Expo GPS altitude and vertical accuracy, and filters hill changes before a **conservatively capped experimental** fuel correction; see `docs/ELEVATION.md`. It does NOT know gear, accelerator state, idling, fuel injection cut-off, or actual fuel-flow, and does not treat downhills as free petrol. No Google Maps API key or elevation web service is involved. The 3D Sketchfab viewer is online-only, while GPS trip tracking and the reference image remain offline-capable.
