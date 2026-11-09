@@ -1,0 +1,16 @@
+node_modules/
+.expo/
+dist/
+build/
+android/
+ios/
+*.jks
+*.keystore
+*.p12
+.env
+.env.*
+!.env.example
+.DS_Store
+*.log
+assets/models/*.glb
+!assets/models/README.md

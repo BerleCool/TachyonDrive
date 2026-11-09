@@ -1,0 +1,39 @@
+{
+  "expo": {
+    "name": "Tachyon Drive",
+    "slug": "tachyon-drive",
+    "scheme": "tachyondrive",
+    "version": "0.1.0",
+    "orientation": "portrait",
+    "userInterfaceStyle": "dark",
+    "newArchEnabled": true,
+    "android": {
+      "package": "net.gideonai.tachyondrive",
+      "permissions": [
+        "android.permission.BLUETOOTH_SCAN",
+        "android.permission.BLUETOOTH_CONNECT",
+        "android.permission.ACCESS_FINE_LOCATION"
+      ]
+    },
+    "ios": {
+      "bundleIdentifier": "net.gideonai.tachyondrive",
+      "infoPlist": {
+        "NSBluetoothAlwaysUsageDescription": "Tachyon Drive uses Bluetooth to read diagnostic data from your own OBD-II adapter."
+      }
+    },
+    "plugins": [
+      [
+        "react-native-ble-plx",
+        {
+          "neverForLocation": false,
+          "isBackgroundEnabled": false,
+          "bluetoothAlwaysPermission": "Connect to your vehicle's Bluetooth diagnostic adapter."
+        }
+      ]
+    ],
+    "extra": {
+      "vehicleGeneration": "Hyundai i20 GB (2014–2020)",
+      "modelDisclaimer": "3D preview, not live vehicle actuation"
+    }
+  }
+}

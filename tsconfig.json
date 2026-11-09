@@ -1,0 +1,12 @@
+{
+  "extends": "expo/tsconfig.base",
+  "compilerOptions": {
+    "strict": true,
+    "noEmit": true,
+    "jsx": "react-jsx",
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "types": ["node", "react"]
+  },
+  "include": ["index.ts", "src/**/*.ts", "src/**/*.tsx", "tests/**/*.ts"]
+}
