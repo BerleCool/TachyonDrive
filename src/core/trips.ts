@@ -1,21 +1,25 @@
 /** Pure, deterministic trip accounting. No car sensors, network or UI dependencies. */
+import { EMPTY_ELEVATION, observeElevation, terrainEstimate, type ElevationStats } from './elevation';
 export type Fix = {
   latitude: number; longitude: number; timestamp: number;
-  accuracy: number | null; speed: number | null; heading?: number | null;
+  accuracy: number | null; speed: number | null; heading?: number | null; altitude?: number | null; altitudeAccuracy?: number | null;
 };
 export type Point = Pick<Fix, 'latitude' | 'longitude' | 'timestamp'> & { breakBefore: boolean };
-export type Rates = { litresPer100Km: number | null; pricePerLitre: number | null };
+export type Rates = { litresPer100Km: number | null; pricePerLitre: number | null; massKg?: number; fuelType?: 'petrol' | 'diesel'; terrainMode?: boolean };
 export type Preferences = Rates & {
   nickname: string; timeZone: string; monthlyBudget: number | null;
+  massKg: number; fuelType: 'petrol' | 'diesel'; terrainMode: boolean;
   speedAlert: number | null; keepAwake: boolean; recordRoute: boolean; backgroundTracking: boolean;
   photoUri: string | null;
 };
 export const DEFAULT_PREFERENCES: Preferences = {
   nickname: 'My i20', litresPer100Km: null, pricePerLitre: null,
-  timeZone: 'Europe/Copenhagen', monthlyBudget: null, speedAlert: null,
+  timeZone: 'Europe/Copenhagen', monthlyBudget: null,
+  massKg: 1150, fuelType: 'petrol', terrainMode: true, speedAlert: null,
   keepAwake: true, recordRoute: true, backgroundTracking: false, photoUri: null,
 };
-export type Slice = { metres: number; movingMs: number; trackedMs: number };
+export type Slice = { metres: number; movingMs: number; trackedMs: number;
+  ascentM?: number; descentM?: number; altitudeCoveredM?: number };
 export type Trip = {
   id: string; title: string; startedAt: number; endedAt: number | null;
   status: 'recording' | 'paused' | 'finished'; pausedAt: number | null; pausedMs: number;
@@ -23,6 +27,7 @@ export type Trip = {
   metres: number; movingMs: number; trackedMs: number; maxSpeedKmh: number;
   lastFix: Fix | null; speedKmh: number | null; gaps: number; rejected: number;
   route: Point[]; slices: Record<string, Slice>;
+  elevation?: ElevationStats;
 };
 export type FuelEntry = {
   id: string; timestamp: number; litres: number; pricePerLitre: number;
@@ -85,14 +90,16 @@ export function newTrip(id: string, timestamp: number, prefs: Preferences): Trip
   return {
     id, title: 'Untitled drive', startedAt: timestamp, endedAt: null,
     status: 'recording', pausedAt: null, pausedMs: 0,
-    rates: { litresPer100Km: prefs.litresPer100Km, pricePerLitre: prefs.pricePerLitre },
+    rates: { litresPer100Km: prefs.litresPer100Km, pricePerLitre: prefs.pricePerLitre,
+      massKg: prefs.massKg, fuelType: prefs.fuelType, terrainMode: prefs.terrainMode },
     timeZone: prefs.timeZone, recordRoute: prefs.recordRoute,
     metres: 0, movingMs: 0, trackedMs: 0, maxSpeedKmh: 0, lastFix: null,
-    speedKmh: null, gaps: 0, rejected: 0, route: [], slices: {},
+    speedKmh: null, gaps: 0, rejected: 0, route: [], slices: {}, elevation: EMPTY_ELEVATION(),
   };
 }
 /** Split an observed segment at local midnight, including DST and month boundaries. */
-export function allocate(slices: Record<string, Slice>, from: number, to: number, metres: number, movingMs: number, zone: string): Record<string, Slice> {
+export function allocate(slices: Record<string, Slice>, from: number, to: number, metres: number, movingMs: number, zone: string,
+  ascentM = 0, descentM = 0, altitudeCoveredM = 0): Record<string, Slice> {
   if (to <= from) return slices;
   const result = { ...slices };
   let cursor = from;
@@ -114,6 +121,9 @@ export function allocate(slices: Record<string, Slice>, from: number, to: number
       metres: prev.metres + metres * fraction,
       movingMs: prev.movingMs + movingMs * fraction,
       trackedMs: prev.trackedMs + boundary - cursor,
+      ascentM: (prev.ascentM ?? 0) + ascentM * fraction,
+      descentM: (prev.descentM ?? 0) + descentM * fraction,
+      altitudeCoveredM: (prev.altitudeCoveredM ?? 0) + altitudeCoveredM * fraction,
     };
     cursor = boundary;
   }
@@ -145,6 +155,7 @@ export function ingest(trip: Trip, fix: Fix): Trip {
   if (!previous || gap) return {
     ...trip, lastFix: fix, speedKmh: speed, gaps: trip.gaps + (gap ? 1 : 0),
     route: appendRoute(trip, fix, true),
+    elevation: observeElevation(trip.elevation, fix, trip.metres, 0, true).stats,
     maxSpeedKmh: Math.max(trip.maxSpeedKmh, speed ?? 0),
   };
   const measured = distanceMetres(previous, fix);
@@ -155,21 +166,27 @@ export function ingest(trip: Trip, fix: Fix): Trip {
   const metres = stationary ? 0 : measured;
   const displayedSpeed = stationary ? 0 : (speed ?? implied);
   const movingMs = displayedSpeed >= 3 ? dt : 0;
+  const elevation = observeElevation(trip.elevation, fix, trip.metres + metres, metres);
+  const altitudeCoveredM = Math.max(0, elevation.stats.coveredMetres - (trip.elevation?.coveredMetres ?? 0));
   return {
     ...trip, metres: trip.metres + metres, movingMs: trip.movingMs + movingMs,
     trackedMs: trip.trackedMs + dt, lastFix: fix, speedKmh: displayedSpeed,
     maxSpeedKmh: Math.max(trip.maxSpeedKmh, displayedSpeed),
     route: metres > 0 ? appendRoute(trip, fix, false) : trip.route,
-    slices: allocate(trip.slices, previous.timestamp, fix.timestamp, metres, movingMs, trip.timeZone),
+    elevation: elevation.stats,
+    slices: allocate(trip.slices, previous.timestamp, fix.timestamp, metres, movingMs, trip.timeZone,
+      elevation.ascentDelta, elevation.descentDelta, altitudeCoveredM),
   };
 }
 export function pauseTrip(t: Trip, now: number): Trip {
-  return t.status !== 'recording' ? t : { ...t, status: 'paused', pausedAt: now, lastFix: null, speedKmh: null };
+  return t.status !== 'recording' ? t : { ...t, status: 'paused', pausedAt: now, lastFix: null, speedKmh: null,
+    elevation: t.elevation ? { ...t.elevation, anchor: null } : undefined };
 }
 export function resumeTrip(t: Trip, now: number): Trip {
   return t.status !== 'paused' ? t : {
     ...t, status: 'recording', pausedAt: null,
     pausedMs: t.pausedMs + Math.max(0, now - (t.pausedAt ?? now)), lastFix: null, speedKmh: null,
+    elevation: t.elevation ? { ...t.elevation, anchor: null } : undefined,
   };
 }
 export function finishTrip(t: Trip, now: number): Trip {
@@ -180,6 +197,7 @@ export function finishTrip(t: Trip, now: number): Trip {
 export function elapsedMs(t: Trip, now: number): number {
   return Math.max(0, (t.endedAt ?? t.pausedAt ?? now) - t.startedAt - t.pausedMs);
 }
+export function tripEstimate(t: Trip) { return terrainEstimate(t.metres, t.rates, t.elevation); }
 export function totals(trips: Trip[], period: string): Totals {
   const sum: Totals = { ...EMPTY_SLICE(), litres: 0, cost: 0, unpricedMetres: 0, trips: 0 };
   for (const trip of trips) {
@@ -188,7 +206,8 @@ export function totals(trips: Trip[], period: string): Totals {
       if (!day.startsWith(period)) continue;
       included = true;
       sum.metres += slice.metres; sum.movingMs += slice.movingMs; sum.trackedMs += slice.trackedMs;
-      const e = estimate(slice.metres, trip.rates);
+      const e = terrainEstimate(slice.metres, trip.rates,
+        { ascentM: slice.ascentM ?? 0, descentM: slice.descentM ?? 0, coveredMetres: slice.altitudeCoveredM ?? 0 });
       if (e) { sum.litres += e.litres; sum.cost += e.cost; }
       else sum.unpricedMetres += slice.metres;
     }
@@ -218,11 +237,12 @@ export function csv(trips: Trip[]): string {
     const safe = /^[\s]*[=+@-]/.test(value) ? "'" + value : value;
     return '"' + safe.replace(/"/g, '""') + '"';
   };
-  const header = ['Trip', 'Start ISO', 'End ISO', 'Distance km', 'Fuel estimate L', 'Fuel estimate DKK', 'L/100km setting', 'DKK/L setting', 'GPS gaps'];
+  const header = ['Trip', 'Start ISO', 'End ISO', 'Distance km', 'Fuel estimate L', 'Fuel estimate DKK', 'L/100km setting', 'DKK/L setting', 'GPS gaps', 'GPS ascent m', 'GPS descent m', 'Terrain adjustment DKK'];
   const rows = trips.map(t => {
-    const e = estimate(t.metres, t.rates);
+    const e = tripEstimate(t);
     return [t.title, new Date(t.startedAt).toISOString(), t.endedAt ? new Date(t.endedAt).toISOString() : '',
-      (t.metres / 1000).toFixed(3), e?.litres.toFixed(3), e?.cost.toFixed(2), t.rates.litresPer100Km, t.rates.pricePerLitre, t.gaps];
+      (t.metres / 1000).toFixed(3), e?.litres.toFixed(3), e?.cost.toFixed(2), t.rates.litresPer100Km, t.rates.pricePerLitre, t.gaps, t.elevation?.ascentM?.toFixed(1) ?? '',
+      t.elevation?.descentM?.toFixed(1) ?? '', e?.correctionCost?.toFixed(2) ?? ''];
   });
   return '\uFEFF' + [header, ...rows].map(row => row.map(cell).join(',')).join('\r\n');
 }

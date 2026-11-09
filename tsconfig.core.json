@@ -1,4 +1,4 @@
 {
   "compilerOptions": { "strict": true, "target": "ES2022", "module": "Node16", "moduleResolution": "Node16", "rootDir": "src/core", "outDir": ".core-test", "skipLibCheck": true, "types": [] },
-  "include": ["src/core/trips.ts"]
+  "include": ["src/core/trips.ts", "src/core/elevation.ts"]
 }

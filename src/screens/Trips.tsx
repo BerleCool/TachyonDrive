@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Pressable, Text, View } from 'react-native';
-import { dayKey, elapsedMs, estimate, fuelSpend, monthKey, totals, type Trip } from '../core/trips';
+import { dayKey, elapsedMs, tripEstimate, fuelSpend, monthKey, totals, type Trip } from '../core/trips';
 import { useStore, editTrip, deleteTrip } from '../services/store';
 import { exportTrips } from '../services/sharing';
 import { DayBars, RouteTrace } from '../ui/instruments';
@@ -42,12 +42,14 @@ export function Trips({ run, confirm, navigate }: Props) {
     <View className="flex-row justify-between items-center mt-7 mb-2"><Eyebrow>DRIVING LOG</Eyebrow><Text className="text-muted text-xs">{filtered.length} saved</Text></View>
     {active && <Pressable onPress={() => navigate('drive')} className="flex-row items-center justify-between py-4 border-b border-line"><Text className="text-accent text-sm">Your open drive</Text><Icon name="arrow-forward" color="#FF8735" size={16} /></Pressable>}
     {!filtered.length && <View className="py-10 items-center"><Icon name="trail-sign-outline" size={28} /><Text className="text-ink text-sm mt-4">Your first drive starts the story.</Text><Text className="text-muted text-xs text-center leading-5 mt-2">Finish a GPS trip to see its distance, trace and estimated fuel cost here.</Text></View>}
-    {filtered.slice(0, limit).map(t => <Pressable key={t.id} accessibilityRole="button" onPress={() => { setSelected(t); setTitle(t.title); }} className="flex-row items-center gap-3 py-5 border-b border-line"><View className="w-9 h-9 rounded-full border border-line items-center justify-center"><Icon name="navigate-outline" size={15} color="#FF8735" /></View><View className="flex-1"><Text className="text-ink text-sm font-medium" numberOfLines={1}>{t.title}</Text><Text className="text-muted text-[11px] mt-1">{dateLabel(t.startedAt, t.timeZone)}</Text></View><View className="items-end"><Text className="text-ink text-sm">{money(estimate(t.metres, t.rates)?.cost ?? null)}</Text><Text className="text-muted text-[11px] mt-1">{km(t.metres)} km / est.</Text></View></Pressable>)}
+    {filtered.slice(0, limit).map(t => <Pressable key={t.id} accessibilityRole="button" onPress={() => { setSelected(t); setTitle(t.title); }} className="flex-row items-center gap-3 py-5 border-b border-line"><View className="w-9 h-9 rounded-full border border-line items-center justify-center"><Icon name="navigate-outline" size={15} color="#FF8735" /></View><View className="flex-1"><Text className="text-ink text-sm font-medium" numberOfLines={1}>{t.title}</Text><Text className="text-muted text-[11px] mt-1">{dateLabel(t.startedAt, t.timeZone)}</Text></View><View className="items-end"><Text className="text-ink text-sm">{money(tripEstimate(t)?.cost ?? null)}</Text><Text className="text-muted text-[11px] mt-1">{km(t.metres)} km / est.</Text></View></Pressable>)}
     {filtered.length > limit && <View className="mt-4"><Button secondary title="Show more drives" onPress={() => setLimit(n => n + 40)} /></View>}
     {selected && <Sheet title="Drive details" onClose={() => setSelected(null)}>
       <Text className="text-muted text-xs mb-5">{dateLabel(selected.startedAt, selected.timeZone)}</Text>
       <RouteTrace route={selected.route} />
-      <View className="flex-row gap-5 my-6"><Metric label="Distance" value={km(selected.metres)} unit="km" /><Metric label="Duration" value={duration(elapsedMs(selected, selected.endedAt ?? Date.now()))} /><Metric label="Estimated cost" value={money(estimate(selected.metres, selected.rates)?.cost ?? null, 1)} /></View>
+      <View className="flex-row gap-5 my-6"><Metric label="Distance" value={km(selected.metres)} unit="km" /><Metric label="Duration" value={duration(elapsedMs(selected, selected.endedAt ?? Date.now()))} /><Metric label="Estimated cost" value={money(tripEstimate(selected)?.cost ?? null, 1)} /></View>
+      <View className="flex-row gap-5 mb-5"><Metric label="GPS ascent" value={selected.elevation ? Math.round(selected.elevation.ascentM).toString() : '—'} unit="m" /><Metric label="GPS descent" value={selected.elevation ? Math.round(selected.elevation.descentM).toString() : '—'} unit="m" /></View>
+      <Text className="text-muted text-xs mb-5">Terrain estimate adjustment: {money(tripEstimate(selected)?.correctionCost ?? null, 2)}. Grade readings are filtered and may miss gentle slopes.</Text>
       <Field label="Trip name" value={title} onChangeText={setTitle} maxLength={80} placeholder="Evening drive" />
       <Button title="Save name" onPress={() => run(async () => { await editTrip(selected.id, title); setSelected(null); })} />
       <Notice>Rates saved with this trip: {selected.rates.litresPer100Km ?? '\u2014'} L/100 km and {selected.rates.pricePerLitre ?? '\u2014'} DKK/L. Later setting changes do not rewrite history. {selected.gaps} GPS gaps; {selected.rejected} rejected fixes.</Notice>

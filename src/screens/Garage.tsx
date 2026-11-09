@@ -14,6 +14,8 @@ export function Garage({ run, confirm }: Props) {
   const [nickname, setNickname] = useState(prefs.nickname);
   const [efficiency, setEfficiency] = useState(prefs.litresPer100Km?.toString() ?? '');
   const [price, setPrice] = useState(prefs.pricePerLitre?.toString() ?? '');
+  const [mass, setMass] = useState(String(prefs.massKg ?? 1150));
+  const [fuelType, setFuelType] = useState<'petrol' | 'diesel'>(prefs.fuelType ?? 'petrol');
   const [budget, setBudget] = useState(prefs.monthlyBudget?.toString() ?? '');
   const [alert, setAlert] = useState(prefs.speedAlert?.toString() ?? '');
   const [unit, setUnit] = useState<'l100' | 'kml'>('l100');
@@ -33,7 +35,9 @@ export function Garage({ run, confirm }: Props) {
   async function save() {
     const input = optional(efficiency, unit === 'l100' ? 1 : 2, unit === 'l100' ? 50 : 100, 'consumption');
     await savePreferences({ nickname: nickname.trim().slice(0, 30) || 'My i20', litresPer100Km: input === null ? null : unit === 'kml' ? 100 / input : input,
-      pricePerLitre: optional(price, .1, 100, 'fuel price'), monthlyBudget: optional(budget, 1, 100000, 'budget'), speedAlert: optional(alert, 10, 200, 'speed alert') });
+      pricePerLitre: optional(price, .1, 100, 'fuel price'),
+      massKg: optional(mass, 800, 2500, 'vehicle mass') ?? 1150, fuelType,
+      monthlyBudget: optional(budget, 1, 100000, 'budget'), speedAlert: optional(alert, 10, 200, 'speed alert') });
     setSaved(true);
   }
   async function choosePhoto() {
@@ -60,10 +64,14 @@ export function Garage({ run, confirm }: Props) {
     <View className="flex-row justify-between items-center mb-4 mt-3"><Eyebrow>FUEL ESTIMATE SETTINGS</Eyebrow><View className="flex-row gap-1">{(['l100', 'kml'] as const).map(u => <Pressable accessibilityRole="button" key={u} onPress={() => { if (u !== unit) { const n = parsePositive(efficiency, .1, 100); setEfficiency(n ? (100 / n).toFixed(2) : ''); setUnit(u); setSaved(false); } }} className={`px-3 py-2 rounded-lg ${unit === u ? 'bg-accent' : 'bg-panel'}`}><Text className={`text-[10px] font-semibold ${unit === u ? 'text-[#191A1C]' : 'text-muted'}`}>{u === 'l100' ? 'L/100 km' : 'km/L'}</Text></Pressable>)}</View></View>
     <Field label={unit === 'l100' ? 'Average consumption (L/100 km)' : 'Average economy (km/L)'} value={efficiency} onChangeText={v => { setEfficiency(v); setSaved(false); }} keyboardType="decimal-pad" placeholder={unit === 'l100' ? 'Example: 6,2' : 'Example: 16,1'} hint="Use your measured average, not an advertised best-case figure." />
     <Field label="Fuel price (DKK/L)" value={price} onChangeText={v => { setPrice(v); setSaved(false); }} keyboardType="decimal-pad" placeholder="Enter your pump price" hint="Manual input. This is not a live fuel-price feed." />
+    <View className="mt-2 mb-3"><Eyebrow>TERRAIN-AWARE ESTIMATES</Eyebrow></View>
+    <Field label="Car + occupants + luggage (kg)" value={mass} onChangeText={v => { setMass(v); setSaved(false); }} keyboardType="number-pad" placeholder="1150" hint="2018 i20 1.2 MPi is roughly 1055 kg unloaded; 1150 kg is only a starting estimate. Include everyone and luggage." />
+    <View className="flex-row gap-2 mb-4">{(['petrol', 'diesel'] as const).map(f => <Pressable key={f} accessibilityRole="button" onPress={() => { setFuelType(f); setSaved(false); }} className={`px-4 py-3 rounded-xl flex-1 items-center ${fuelType === f ? 'bg-accent' : 'bg-panel border border-line'}`}><Text className={fuelType === f ? 'text-[#191A1C] font-semibold' : 'text-muted'}>{f === 'petrol' ? 'Petrol' : 'Diesel'}</Text></Pressable>)}</View>
+    <Row icon="trending-up-outline" title="Estimate uphill / downhill effect" subtitle="Experimental. Uses phone GPS vertical accuracy, not engine data. Applies to NEW trips only." trailing={<Switch value={prefs.terrainMode ?? true} onValueChange={v => run(() => savePreferences({ terrainMode: v }))} trackColor={{ false: '#3D4146', true: '#8B522F' }} thumbColor={prefs.terrainMode ? '#FF8735' : '#A3A6AC'} />} />
     <Field label="Monthly driving budget (DKK, optional)" value={budget} onChangeText={v => { setBudget(v); setSaved(false); }} keyboardType="decimal-pad" placeholder="No budget set" />
     <Field label="Your speed alert (km/h, optional)" value={alert} onChangeText={v => { setAlert(v); setSaved(false); }} keyboardType="number-pad" placeholder="Off" hint="A visual threshold you set, not the road's posted speed limit." />
     <Button title={saved ? 'Settings saved' : 'Save settings'} icon={saved ? 'checkmark' : 'checkmark-outline'} onPress={() => run(save)} />
-    <Notice>Estimates = distance / 100 x L/100 km x DKK/L. Each trip keeps the rates from when it started. {active ? 'Changes apply to your NEXT drive, not the open trip.' : 'Actual fuel consumption cannot be read through the stereo Bluetooth connection.'}</Notice>
+    <Notice>Baseline = distance / 100 × L/100 km × DKK/L. If enabled, reliable hill measurements add a capped, conservative gravity correction. Downhill never means free fuel. Each trip keeps the rates from when it started. {active ? 'Changes apply to your NEXT drive, not the open trip.' : 'Actual fuel consumption cannot be read through the stereo Bluetooth connection.'}</Notice>
     <View className="mt-5"><Eyebrow>DRIVING & PRIVACY</Eyebrow></View>
     <Row icon="phone-portrait-outline" title="Keep display awake" subtitle="While the driving display is open" trailing={<Switch value={prefs.keepAwake} onValueChange={v => run(() => savePreferences({ keepAwake: v }))} trackColor={{ false: '#3D4146', true: '#8B522F' }} thumbColor={prefs.keepAwake ? '#FF8735' : '#A3A6AC'} />} />
     <Row icon="map-outline" title="Save GPS traces" subtitle="On-device only. Applies to new trips." trailing={<Switch value={prefs.recordRoute} onValueChange={v => run(() => savePreferences({ recordRoute: v }))} trackColor={{ false: '#3D4146', true: '#8B522F' }} thumbColor={prefs.recordRoute ? '#FF8735' : '#A3A6AC'} />} />

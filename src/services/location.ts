@@ -15,7 +15,8 @@ export const getGPS = () => state;
 export function useGPS() { return useSyncExternalStore(fn => { listeners.add(fn); return () => { listeners.delete(fn); }; }, getGPS, getGPS); }
 function asFix(location: Location.LocationObject): Fix {
   return { latitude: location.coords.latitude, longitude: location.coords.longitude, timestamp: location.timestamp,
-    accuracy: location.coords.accuracy, speed: location.coords.speed, heading: location.coords.heading };
+    accuracy: location.coords.accuracy, speed: location.coords.speed, heading: location.coords.heading,
+    altitude: location.coords.altitude, altitudeAccuracy: location.coords.altitudeAccuracy };
 }
 async function receive(location: Location.LocationObject) {
   const fix = asFix(location);

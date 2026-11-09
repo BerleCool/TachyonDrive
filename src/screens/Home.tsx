@@ -1,6 +1,6 @@
 import React from 'react';
 import { Image, Pressable, Text, View } from 'react-native';
-import { dayKey, estimate, monthKey, totals, validRates } from '../core/trips';
+import { dayKey, tripEstimate, monthKey, totals, validRates } from '../core/trips';
 import { useStore } from '../services/store';
 import { beginDrive } from '../services/location';
 import { Button, Eyebrow, Icon, Metric, Notice, Row, Screen } from '../ui/primitives';
@@ -26,7 +26,7 @@ export function Home({ navigate, run }: { navigate: (tab: string) => void; run: 
     <View className="pt-6 pb-5">
       <View className="flex-row justify-between items-center mb-4"><Eyebrow>{active ? 'YOUR OPEN DRIVE' : 'READY WHEN YOU ARE'}</Eyebrow><Icon name={active ? 'navigate-outline' : 'location-outline'} color="#FF8735" size={17} /></View>
       {active ? <>
-        <View className="flex-row gap-8 mb-5"><Metric label="Trip distance" value={km(active.metres)} unit="km" /><Metric label="Estimated fuel" value={money(estimate(active.metres, active.rates)?.cost ?? null)} /></View>
+        <View className="flex-row gap-8 mb-5"><Metric label="Trip distance" value={km(active.metres)} unit="km" /><Metric label="Estimated fuel" value={money(tripEstimate(active)?.cost ?? null)} /></View>
         <Button title={active.status === 'paused' ? 'Return to paused drive' : 'Open driving display'} icon="arrow-forward" onPress={() => navigate('drive')} />
       </> : <Button title="Start a drive" icon="arrow-forward" onPress={() => run(async () => { await beginDrive(); navigate('drive'); })} />}
       <Text className="text-muted text-[11px] leading-5 text-center mt-3">GPS tracking. No adapter. No laptop. Your data stays here.</Text>
