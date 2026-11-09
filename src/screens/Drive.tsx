@@ -15,7 +15,7 @@ export function Drive({ now, run, confirm, focus, setFocus }: { now: number; run
   const estimateNow = active ? estimate(active.metres, active.rates) : null;
   return <Screen>
     <View className="flex-row justify-between items-center mb-3">
-      <View><Eyebrow>{preview ? 'INSTRUMENT PREVIEW' : active?.status === 'paused' ? 'DRIVE PAUSED' : active ? 'DRIVE IN PROGRESS' : 'DRIVING DISPLAY'}</Eyebrow><Text className="text-muted text-xs mt-2">{preview ? 'Simulated speed. Nothing is recorded.' : active?.status === 'paused' ? 'Your trip is saved. Resume when ready.' : gps.mode === 'background' ? 'Recording with the screen on or off' : gps.mode === 'foreground' ? 'Recording / keep this app open' : 'Enable GPS or start a drive'}</Text></View>
+      <View className="flex-1 pr-3"><Eyebrow>{preview ? 'INSTRUMENT PREVIEW' : active?.status === 'paused' ? 'DRIVE PAUSED' : active ? 'DRIVE IN PROGRESS' : 'DRIVING DISPLAY'}</Eyebrow><Text className="text-muted text-xs mt-2">{preview ? 'Simulated speed. Nothing is recorded.' : active?.status === 'paused' ? 'Your trip is saved. Resume when ready.' : gps.mode === 'background' ? 'Recording with the screen on or off' : gps.mode === 'foreground' ? 'Recording / keep this app open' : 'Enable GPS or start a drive'}</Text></View>
       <Pressable accessibilityRole="button" accessibilityLabel={focus ? 'Exit focus mode' : 'Enter focus mode'} onPress={() => setFocus(!focus)} className="w-12 h-12 items-center justify-center rounded-full border border-line"><Icon name={focus ? 'contract-outline' : 'expand-outline'} size={19} /></Pressable>
     </View>
     <Speedometer speed={speed} alert={prefs.speedAlert} preview={preview} />

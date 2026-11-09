@@ -12,7 +12,7 @@ export function Home({ navigate, run }: { navigate: (tab: string) => void; run: 
   const month = totals(all, monthKey(Date.now(), prefs.timeZone));
   return <Screen>
     <View className="flex-row items-start justify-between">
-      <View><Eyebrow>HYUNDAI / 2018</Eyebrow><Text className="text-ink text-[56px] leading-[62px] font-semibold tracking-[-3px]">i20<Text className="text-muted text-base tracking-normal">  {prefs.nickname === 'My i20' ? 'GB' : prefs.nickname}</Text></Text></View>
+      <View className="flex-1 pr-3"><Eyebrow>HYUNDAI / 2018</Eyebrow><Text numberOfLines={1} adjustsFontSizeToFit className="text-ink text-[56px] leading-[62px] font-semibold tracking-[-3px]">i20<Text className="text-muted text-base tracking-normal">  {prefs.nickname === 'My i20' ? 'GB' : prefs.nickname}</Text></Text></View>
       <View className="flex-row items-center gap-2 pt-2"><View className="w-1.5 h-1.5 rounded-full bg-accent" /><Text className="text-muted text-[10px] tracking-wider">PHONE MODE</Text></View>
     </View>
     <View className="mt-2 -mx-3 h-[208px] overflow-hidden justify-center">
