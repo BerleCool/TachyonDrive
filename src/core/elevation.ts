@@ -42,8 +42,8 @@ export function observeElevation(previous: ElevationStats | undefined, fix: Heig
     ? fix.altitudeAccuracy : null;
   const trusted = usableAltitude(fix);
   // A low-pass altitude avoids turning oscillating GPS noise into many small hills.
-  const smoothed = trusted ? (finite(p.smoothedM)
-    ? p.smoothedM * 0.5 + fix.altitude! * 0.5 : fix.altitude!) : null;
+  const smoothed = trusted ? (reset || !p.anchor || !finite(p.smoothedM)
+    ? fix.altitude! : p.smoothedM * 0.5 + fix.altitude! * 0.5) : null;
   const base: ElevationStats = {
     ...p, lastAltitudeM: smoothed ?? display, lastAccuracyM: accuracy, smoothedM: smoothed,
   };

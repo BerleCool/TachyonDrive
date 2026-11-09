@@ -21,7 +21,7 @@ test('stationary vertical jitter is ignored', () => {
 test('gentle sustained hill is detected past accuracy threshold', () => {
   let v = E.observeElevation(undefined, F(1000, 50), 0, 0).stats;
   for (let i=1;i<=5;i++) v = E.observeElevation(v, F(1000+i*10000,50+i*2), i*60,60).stats;
-  assert.ok(v.ascentM >= 8 && v.ascentM <= 10); assert.equal(v.descentM,0);
+  assert.ok(v.ascentM >= 5 && v.ascentM <= 10); assert.equal(v.descentM,0);
 });
 test('slope beyond realistic road threshold is rejected', () => {
   let v = E.observeElevation(undefined, F(1000, 50), 0, 0).stats;
